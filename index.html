@@ -112,11 +112,12 @@
     cursor: pointer;
     transition: transform .08s, box-shadow .08s;
   }
+  .btn:disabled { opacity: .65; cursor: not-allowed; }
   .btn:focus-visible, .enlace:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
   .btn-primario { background: var(--primario); color: #fff; box-shadow: 0 5px 0 #1D4ED8; }
-  .btn-primario:active { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
+  .btn-primario:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
   .btn-jugar { background: var(--acento); color: var(--texto); box-shadow: 0 5px 0 #CA9A04; }
-  .btn-jugar:active { transform: translateY(4px); box-shadow: 0 1px 0 #CA9A04; }
+  .btn-jugar:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #CA9A04; }
   .btn-suave { background: transparent; color: var(--primario); border: 2.5px solid var(--primario); margin-top: 12px; }
 
   .acciones { display: grid; gap: 10px; margin-top: 8px; }
@@ -132,7 +133,9 @@
   }
   .sep { color: var(--texto-sec); align-self: center; }
 
-  .aviso { color: var(--texto-sec); font-size: 15px; margin-top: 10px; }
+  .aviso { color: var(--texto-sec); font-size: 15px; margin-top: 12px; min-height: 20px; }
+  .aviso.error { color: var(--reintentar); }
+  .aviso.ok { color: #15803D; }
 
   /* Pantalla de login: números flotando */
   .numeros { display: flex; justify-content: center; gap: 12px; margin: 4px 0 24px; }
@@ -165,10 +168,10 @@
       <h1 id="t-login">¡Bienvenido!</h1>
       <p class="sub">Entra para aprender y jugar con los números.</p>
 
-      <form class="tarjeta" data-form>
+      <form class="tarjeta" data-form id="form-login">
         <div class="campo">
-          <label for="l-usuario">Usuario</label>
-          <input id="l-usuario" type="text" autocomplete="username" placeholder="Tu usuario" required>
+          <label for="l-usuario">Usuario o correo del tutor</label>
+          <input id="l-usuario" type="text" autocomplete="username" placeholder="Tu usuario o correo" required>
         </div>
         <div class="campo">
           <label for="l-pass">Contraseña</label>
@@ -178,6 +181,7 @@
           </div>
         </div>
         <div class="acciones"><button class="btn btn-jugar" type="submit">Entrar</button></div>
+        <p class="aviso" id="msg-login" role="status" aria-live="polite"></p>
       </form>
 
       <div class="enlaces">
@@ -192,7 +196,7 @@
       <h1 id="t-registro">Crear cuenta</h1>
       <p class="sub">Un adulto llena esta información.</p>
 
-      <form data-form>
+      <form data-form id="form-registro">
         <div class="tarjeta padres">
           <h2>Datos del tutor</h2>
           <div class="campo">
@@ -228,6 +232,7 @@
           <button class="btn btn-primario" type="submit">Registrar</button>
           <button class="btn btn-suave" type="button" data-ir="login">Volver</button>
         </div>
+        <p class="aviso" id="msg-registro" role="status" aria-live="polite"></p>
       </form>
     </section>
 
@@ -236,12 +241,13 @@
       <h1 id="t-recuperar">Recuperar contraseña</h1>
       <p class="sub">Te enviaremos un mensaje al correo del tutor.</p>
 
-      <form class="tarjeta padres" data-form>
+      <form class="tarjeta padres" data-form id="form-recuperar">
         <div class="campo">
           <label for="c-correo">Correo del tutor</label>
           <input id="c-correo" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
         </div>
         <div class="acciones"><button class="btn btn-primario" type="submit">Enviar</button></div>
+        <p class="aviso" id="msg-recuperar" role="status" aria-live="polite"></p>
       </form>
       <button class="btn btn-suave" type="button" data-ir="login">← Volver</button>
     </section>
@@ -249,27 +255,19 @@
 </div>
 
 <script>
-  // Solo navegación visual entre pantallas (la lógica real va después)
   const pantallas = document.querySelectorAll('.pantalla');
   function ir(id) {
     pantallas.forEach(p => p.classList.toggle('activa', p.id === id));
     window.scrollTo(0, 0);
-    document.querySelector('#' + id + ' h1').setAttribute('tabindex', '-1');
-    document.querySelector('#' + id + ' h1').focus({ preventScroll: true });
+    const titulo = document.querySelector('#' + id + ' h1');
+    if (titulo) {
+      titulo.setAttribute('tabindex', '-1');
+      titulo.focus({ preventScroll: true });
+    }
   }
   document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
   document.querySelectorAll('[data-form]').forEach(f => f.addEventListener('submit', e => e.preventDefault()));
 
-  // Login: al presionar Entrar pasa al menú principal
-  document.querySelector('#login form').addEventListener('submit', () => {
-    location.href = 'Menu.html#menu';
-  });
-
-  document.querySelector('#registro form').addEventListener('submit', () => {
-    location.href = 'Menu.html#menu';
-  });
-
-  // Mostrar / ocultar contraseña
   const ojoAbierto = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const ojoCerrado = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/></svg>';
   document.querySelectorAll('[data-ojo]').forEach(b => {
@@ -281,6 +279,140 @@
       b.innerHTML = oculto ? ojoCerrado : ojoAbierto;
       b.setAttribute('aria-label', oculto ? 'Ocultar contraseña' : 'Mostrar contraseña');
     });
+  });
+</script>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+  import {
+    doc,
+    setDoc,
+    getDocs,
+    collection,
+    query,
+    where
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+  function mostrarMensaje(el, texto, tipo = "") {
+    if (!el) return;
+    el.textContent = texto;
+    el.className = "aviso" + (tipo ? " " + tipo : "");
+  }
+
+  function traducirError(code) {
+    switch (code) {
+      case "auth/email-already-in-use":
+        return "Ese correo ya está registrado.";
+      case "auth/invalid-email":
+        return "Escribe un correo electrónico válido.";
+      case "auth/weak-password":
+        return "La contraseña debe tener al menos 6 caracteres.";
+      case "auth/invalid-credential":
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+        return "Usuario, correo o contraseña incorrectos.";
+      default:
+        return "No se pudo completar la acción. Inténtalo de nuevo.";
+    }
+  }
+
+  // REGISTRO + GUARDADO INICIAL EN FIRESTORE
+  const formRegistro = document.querySelector("#form-registro");
+  const msgRegistro = document.querySelector("#msg-registro");
+
+  formRegistro.addEventListener("submit", async () => {
+    const btn = formRegistro.querySelector("button[type='submit']");
+    const nombreTutor = document.querySelector("#r-tutor").value.trim();
+    const correoTutor = document.querySelector("#r-correo").value.trim().toLowerCase();
+    const usuarioNino = document.querySelector("#r-usuario").value.trim().toLowerCase();
+    const pass = document.querySelector("#r-pass").value;
+    const nombreNino = document.querySelector("#r-nino").value.trim();
+
+    btn.disabled = true;
+    mostrarMensaje(msgRegistro, "Creando cuenta...");
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, correoTutor, pass);
+      const uid = cred.user.uid;
+
+      await setDoc(doc(db, "usuarios", uid), {
+        nombreTutor,
+        correoTutor,
+        usuarioNino,
+        nombreNino,
+        puntajeTotal: 0,
+        actualizadoEn: new Date().toISOString()
+      });
+
+      mostrarMensaje(msgRegistro, "¡Cuenta creada! Entrando al menú...", "ok");
+      location.href = "Menu.html#menu";
+    } catch (err) {
+      mostrarMensaje(msgRegistro, traducirError(err.code), "error");
+      btn.disabled = false;
+    }
+  });
+
+  // LOGIN (ACEPTA USUARIO DEL NIÑO O CORREO DEL TUTOR)
+  const formLogin = document.querySelector("#form-login");
+  const msgLogin = document.querySelector("#msg-login");
+
+  formLogin.addEventListener("submit", async () => {
+    const btn = formLogin.querySelector("button[type='submit']");
+    const entradaUsuario = document.querySelector("#l-usuario").value.trim();
+    const pass = document.querySelector("#l-pass").value;
+
+    btn.disabled = true;
+    mostrarMensaje(msgLogin, "Verificando datos...");
+
+    try {
+      let correoParaLogin = entradaUsuario;
+
+      if (!entradaUsuario.includes("@")) {
+        const q = query(
+          collection(db, "usuarios"),
+          where("usuarioNino", "==", entradaUsuario.toLowerCase())
+        );
+        const snap = await getDocs(q);
+        if (snap.empty || !snap.docs[0].data().correoTutor) {
+          mostrarMensaje(msgLogin, "Usuario o contraseña incorrectos.", "error");
+          btn.disabled = false;
+          return;
+        }
+        correoParaLogin = snap.docs[0].data().correoTutor;
+      }
+
+      await signInWithEmailAndPassword(auth, correoParaLogin, pass);
+      location.href = "Menu.html#menu";
+    } catch (err) {
+      mostrarMensaje(msgLogin, traducirError(err.code), "error");
+      btn.disabled = false;
+    }
+  });
+
+  // RECUPERAR CONTRASEÑA
+  const formRecuperar = document.querySelector("#form-recuperar");
+  const msgRecuperar = document.querySelector("#msg-recuperar");
+
+  formRecuperar.addEventListener("submit", async () => {
+    const btn = formRecuperar.querySelector("button[type='submit']");
+    const correo = document.querySelector("#c-correo").value.trim();
+
+    btn.disabled = true;
+    mostrarMensaje(msgRecuperar, "Enviando enlace...");
+
+    try {
+      await sendPasswordResetEmail(auth, correo);
+      mostrarMensaje(msgRecuperar, "Listo. Revisa tu correo para restablecer la contraseña.", "ok");
+    } catch (err) {
+      mostrarMensaje(msgRecuperar, traducirError(err.code), "error");
+    } finally {
+      btn.disabled = false;
+    }
   });
 </script>
 </body>
