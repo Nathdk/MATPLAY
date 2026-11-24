@@ -41,7 +41,7 @@ h2{margin:0 0 8px;font-size:1.1rem}
 .opts button.no{border-color:var(--retry);color:var(--retry)}
 .btn{font:inherit;font-weight:700;padding:10px 18px;border:0;border-radius:14px;background:var(--azul);color:#fff;font-size:1rem;cursor:pointer}
 .row{display:flex;gap:8px;justify-content:center;margin-top:8px}
-canvas{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:0 auto;background:var(--card);border:3px solid var(--verde);border-radius:20px;touch-action:none}
+canvas{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:0 auto;background:#1E293B;border:3px solid #22C55E;border-radius:24px;box-shadow:inset 0 2px 12px rgba(0,0,0,.18),0 4px 12px rgba(22,163,74,.08);touch-action:none}
 </style>
 </head>
 <body>
@@ -70,9 +70,9 @@ canvas{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:0 auto;bac
 <section id="s2">
 <div class="card"><h2>Elige un número</h2><div class="sel" id="sel2"></div></div>
 <div class="card">
-<p class="hint">Remarca el número con tu dedo. Empieza en el punto verde.</p>
+<p class="hint">Sigue el recorrido punteado. Comienza en el punto verde y avanza en la dirección de la flecha.</p>
 <canvas id="cv" width="420" height="420"></canvas>
-<div class="row"><button class="btn" id="borrar">Borrar</button></div>
+<div class="msg" id="traceMsg">Empieza en el punto verde y sigue la línea.</div><div class="row"><button class="btn" id="borrar">Borrar</button></div>
 </div>
 </section>
 </main>
@@ -80,48 +80,307 @@ canvas{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:0 auto;bac
 const W=["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez"];
 const E=["🐻","🍐","🌸","🐤","🦁","🐘","🍍","🍎"];
 let n=1;
+let coloreoSumado=false;
+let quizRespondido=false;
+let trazoCompletadoSumado=false;
 const $=id=>document.getElementById(id);
+
+function notificarAvance(payload){
+  window.dispatchEvent(new CustomEvent("matplay:avance", { detail: payload }));
+}
+
 function mkSel(id){const d=$(id);for(let i=1;i<=10;i++){const b=document.createElement("button");b.textContent=i;b.onclick=()=>setN(i);d.appendChild(b)}}
 mkSel("sel1");mkSel("sel2");
-function setN(i){n=i;
-document.querySelectorAll(".sel button").forEach((b,k)=>b.classList.toggle("on",(k%10)+1===n));
-$("num").textContent=n;$("word").textContent=W[n];
-const f=$("frame");f.innerHTML="";$("m1").textContent="";$("m1").className="msg";
-for(let k=0;k<10;k++){const b=document.createElement("button");b.onclick=()=>{b.classList.toggle("f");chk()};f.appendChild(b)}
-strokes=[];drawT();}
-function chk(){const c=document.querySelectorAll("#frame .f").length,m=$("m1");
-if(c===n){m.textContent="✓ ¡Muy bien!";m.className="msg ok"}
-else{m.textContent=c?"Inténtalo de nuevo: pinta "+n:"";m.className="msg no"}}
+
+function setN(i){
+  n=i;
+  coloreoSumado=false;
+  trazoCompletadoSumado=false;
+  document.querySelectorAll(".sel button").forEach((b,k)=>b.classList.toggle("on",(k%10)+1===n));
+  $("num").textContent=n;$("word").textContent=W[n];
+  const f=$("frame");f.innerHTML="";$("m1").textContent="";$("m1").className="msg";
+  for(let k=0;k<10;k++){const b=document.createElement("button");b.onclick=()=>{b.classList.toggle("f");chk()};f.appendChild(b)}
+  resetTrace("Empieza en el punto verde y sigue la línea.");
+  notificarAvance({ numeroVisto: n });
+}
+
+function chk(){
+  const c=document.querySelectorAll("#frame .f").length,m=$("m1");
+  if(c===n){
+    m.textContent="✓ ¡Muy bien!";m.className="msg ok";
+    if(!coloreoSumado){
+      coloreoSumado=true;
+      notificarAvance({ coloreoNumero: n, sumarPunto: 1 });
+    }
+  } else {
+    m.textContent=c?"Inténtalo de nuevo: pinta "+n:"";m.className="msg no";
+  }
+}
+
 function quiz(){
-const q=1+Math.floor(Math.random()*10),e=E[Math.floor(Math.random()*E.length)];
-$("objs").textContent=Array(q).fill(e).join(" ");$("m2").textContent="";$("m2").className="msg";
-const s=new Set([q]);while(s.size<4)s.add(1+Math.floor(Math.random()*10));
-const o=[...s].sort(()=>Math.random()-.5),box=$("opts");box.innerHTML="";
-o.forEach(v=>{const b=document.createElement("button");b.textContent=v;b.onclick=()=>{
-const m=$("m2");
-if(v===q){b.classList.add("ok");b.textContent="✓";m.textContent="✓ ¡Correcto! Hay "+q;m.className="msg ok"}
-else{b.classList.add("no");m.textContent="Inténtalo de nuevo";m.className="msg no"}};box.appendChild(b)})}
+  quizRespondido=false;
+  const q=1+Math.floor(Math.random()*10),e=E[Math.floor(Math.random()*E.length)];
+  $("objs").textContent=Array(q).fill(e).join(" ");$("m2").textContent="";$("m2").className="msg";
+  const s=new Set([q]);while(s.size<4)s.add(1+Math.floor(Math.random()*10));
+  const o=[...s].sort(()=>Math.random()-.5),box=$("opts");box.innerHTML="";
+  o.forEach(v=>{const b=document.createElement("button");b.textContent=v;b.onclick=()=>{
+    const m=$("m2");
+    if(v===q){
+      b.classList.add("ok");b.textContent="✓";m.textContent="✓ ¡Correcto! Hay "+q;m.className="msg ok";
+      if(!quizRespondido){
+        quizRespondido=true;
+        notificarAvance({ aciertoConteo: q, sumarPunto: 1 });
+      }
+    } else {
+      b.classList.add("no");m.textContent="Inténtalo de nuevo";m.className="msg no";
+    }
+  };box.appendChild(b)});
+}
 $("nuevo").onclick=quiz;
-const cv=$("cv"),cx=cv.getContext("2d");let strokes=[],cur=null;
+
+const cv=$("cv"),cx=cv.getContext("2d");
+let strokes=[],cur=null,guidePaths=[],activeGuide=0,guideProgress=0,strokeValid=true;
+// ---- Constructores geométricos de los números ----
+// Ángulos en grados sobre el canvas: 0 = derecha, 90 = abajo, 180 = izquierda, 270 = arriba.
+function arc(cx0,cy0,rx,ry,a0,a1){
+ const out=[],steps=Math.max(4,Math.ceil(Math.abs(a1-a0)/5));
+ for(let i=0;i<=steps;i++){const a=(a0+(a1-a0)*i/steps)*Math.PI/180;out.push([cx0+rx*Math.cos(a),cy0+ry*Math.sin(a)])}
+ return out;
+}
+// Une suavemente el final de "a" con el inicio de "b" (curva de Bézier tangente a ambos).
+function link(a,b){
+ const p0=a[a.length-1],q0=a[a.length-2],p1=b[0],q1=b[1];
+ const n=v=>{const l=Math.hypot(v[0],v[1])||1;return[v[0]/l,v[1]/l]};
+ const u0=n([p0[0]-q0[0],p0[1]-q0[1]]),u1=n([q1[0]-p1[0],q1[1]-p1[1]]);
+ const d=Math.hypot(p1[0]-p0[0],p1[1]-p0[1])*.45;
+ const c0=[p0[0]+u0[0]*d,p0[1]+u0[1]*d],c1=[p1[0]-u1[0]*d,p1[1]-u1[1]*d],out=[];
+ for(let i=1;i<12;i++){const t=i/12,m=1-t;
+   out.push([m*m*m*p0[0]+3*m*m*t*c0[0]+3*m*t*t*c1[0]+t*t*t*p1[0],m*m*m*p0[1]+3*m*m*t*c0[1]+3*m*t*t*c1[1]+t*t*t*p1[1]])}
+ return out;
+}
+const join=(...parts)=>parts.reduce((acc,p)=>acc.length?[...acc,...link(acc,p),...p]:p,[]);
+
+const bowl5=arc(210,265,84,80,225,505);
+const T8=[210,142,58,62],B8=[210,272,72,72];
+const P={
+ 1:[[[178,115],[230,78],[230,345]]],
+ 2:[[...arc(210,150,76,72,200,402),[128,345],[298,345]]],
+ 3:[[...arc(205,143,70,62,205,460),...arc(205,275,80,70,262,520)]],
+ 4:[[[255,78],[122,248]],[[255,78],[255,345]],[[118,248],[318,248]]],
+ 5:[[[292,80],[150,80],bowl5[0],...bowl5.slice(1)]],
+ 6:[[...arc(262,268,132,185,288,180),...arc(210,268,80,78,180,-175)]],
+ 7:[[[125,82],[298,82],[178,345]]],
+ 8:[join(arc(...T8,300,135),arc(...B8,315,585),arc(...T8,45,-60))],
+ 9:[[...arc(205,145,70,68,0,-360),[275,265],...arc(220,265,55,80,0,105).slice(1)]],
+ 10:[[[95,115],[145,78],[145,345]],arc(290,212,72,132,-90,-450)]
+};
+function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1])}
+function projectOnPath(p,path,minProgress=0,maxProgress=1){
+ const lengths=[];
+ for(let i=1;i<path.length;i++)lengths.push(dist(path[i-1],path[i]));
+ const full=lengths.reduce((a,b)=>a+b,0)||1;
+ let total=0,best={distance:Infinity,progress:minProgress};
+ for(let i=1;i<path.length;i++){
+   const segStart=total/full,segEnd=(total+lengths[i-1])/full;
+   const lo=Math.max(0,(minProgress-segStart)/(segEnd-segStart||1));
+   const hi=Math.min(1,(maxProgress-segStart)/(segEnd-segStart||1));
+   if(lo<=hi){
+     const a=path[i-1],b=path[i],dx=b[0]-a[0],dy=b[1]-a[1],l=dx*dx+dy*dy;
+     const raw=l?((p[0]-a[0])*dx+(p[1]-a[1])*dy)/l:0;
+     const t=Math.max(lo,Math.min(hi,raw));
+     const q=[a[0]+t*dx,a[1]+t*dy],d=dist(p,q);
+     if(d<best.distance)best={distance:d,progress:(total+t*lengths[i-1])/full};
+   }
+   total+=lengths[i-1];
+ }
+ return best;
+}
+function densify(path){
+ const out=[path[0]];
+ for(let i=1;i<path.length;i++){
+   const a=path[i-1],b=path[i],k=Math.max(1,Math.ceil(dist(a,b)/8));
+   for(let j=1;j<=k;j++)out.push([a[0]+(b[0]-a[0])*j/k,a[1]+(b[1]-a[1])*j/k]);
+ }
+ return out;
+}
+function strokePath(path,width,color,dash){
+ cx.save();cx.lineCap="round";cx.lineJoin="round";cx.lineWidth=width;cx.strokeStyle=color;cx.setLineDash(dash||[]);
+ cx.beginPath();path.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.stroke();cx.restore();
+}
+function pointAlong(path,len){
+ let acc=0;
+ for(let i=1;i<path.length;i++){
+   const d=dist(path[i-1],path[i]);
+   if(acc+d>=len){const t=(len-acc)/(d||1),a=path[i-1],b=path[i];
+     return{p:[a[0]+t*(b[0]-a[0]),a[1]+t*(b[1]-a[1])],ang:Math.atan2(b[1]-a[1],b[0]-a[0])};}
+   acc+=d;
+ }
+ const a=path[path.length-2],b=path[path.length-1];
+ return{p:b,ang:Math.atan2(b[1]-a[1],b[0]-a[0])};
+}
 function drawT(){
-const g=getComputedStyle(document.documentElement);
-cx.clearRect(0,0,420,420);
-cx.font="bold 330px 'Trebuchet MS',Verdana,sans-serif";cx.textAlign="center";cx.textBaseline="alphabetic";
-const t=String(n);
-cx.fillStyle="rgba(34,197,94,.15)";cx.fillText(t,210,330);
-cx.setLineDash([12,10]);cx.lineWidth=4;cx.strokeStyle="#64748B";cx.strokeText(t,210,330);cx.setLineDash([]);
-cx.fillStyle="#22C55E";cx.beginPath();cx.arc(210,90,12,0,7);cx.fill();
-cx.lineCap="round";cx.lineJoin="round";cx.lineWidth=16;cx.strokeStyle="#2563EB";
-strokes.forEach(s=>{cx.beginPath();s.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));if(s.length===1)cx.lineTo(s[0][0]+.1,s[0][1]);cx.stroke()})}
+ cx.clearRect(0,0,420,420);
+ guidePaths=(P[n]||P[1]).map(densify);
+
+ guidePaths.forEach(p=>strokePath(p,54,"#94A3B8",[8,9]));
+ guidePaths.forEach(p=>strokePath(p,44,"#1B494A"));
+ guidePaths.forEach((p,i)=>{
+   strokePath(p,3,i===activeGuide?"rgba(255,255,255,.65)":"rgba(255,255,255,.2)",[2,10]);
+ });
+
+ const path=guidePaths[activeGuide];
+ if(path){
+   const finish=path[path.length-1];
+   cx.fillStyle="#F97316";
+   cx.beginPath();cx.arc(finish[0],finish[1],11,0,Math.PI*2);cx.fill();
+   cx.strokeStyle="rgba(255,255,255,.9)";cx.lineWidth=3;cx.stroke();
+
+   cx.fillStyle="#22C55E";
+   cx.beginPath();cx.arc(path[0][0],path[0][1],15,0,Math.PI*2);cx.fill();
+   cx.strokeStyle="rgba(255,255,255,.8)";cx.lineWidth=3;cx.stroke();
+
+   const a=pointAlong(path,40);
+   cx.save();cx.translate(a.p[0],a.p[1]);cx.rotate(a.ang);cx.fillStyle="#FACC15";
+   cx.beginPath();cx.moveTo(11,0);cx.lineTo(-7,-8);cx.lineTo(-7,8);cx.closePath();cx.fill();cx.restore();
+ }
+
+ cx.lineCap="round";cx.lineJoin="round";cx.lineWidth=15;cx.strokeStyle="#2563EB";
+ strokes.forEach(s=>{
+   cx.beginPath();
+   s.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));
+   if(s.length===1)cx.lineTo(s[0][0]+.1,s[0][1]);
+   cx.stroke();
+ });
+}
 function pt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*420/r.width,(e.clientY-r.top)*420/r.height]}
-cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);cur=[pt(e)];strokes.push(cur);drawT()};
-cv.onpointermove=e=>{if(cur){cur.push(pt(e));drawT()}};
-cv.onpointerup=cv.onpointercancel=()=>{cur=null};
-$("borrar").onclick=()=>{strokes=[];drawT()};
+function resetTrace(message){
+ strokes=[];cur=null;activeGuide=0;guideProgress=0;strokeValid=true;
+ $("traceMsg").textContent=message||"Empieza en el punto verde y sigue la línea.";
+ drawT();
+}
+cv.onpointerdown=e=>{
+ if(activeGuide>=guidePaths.length)return;
+ const p=pt(e),path=guidePaths[activeGuide];
+ if(dist(p,path[0])>38){
+   $("traceMsg").textContent="Empieza exactamente en el punto verde.";
+   return;
+ }
+ cv.setPointerCapture(e.pointerId);
+ cur=[p];strokes.push(cur);guideProgress=0;strokeValid=true;
+ $("traceMsg").textContent="¡Bien! Sigue la línea punteada hasta el final.";
+ drawT();
+};
+cv.onpointermove=e=>{
+ if(!cur||!strokeValid)return;
+ const p=pt(e),path=guidePaths[activeGuide],hit=projectOnPath(p,path,Math.max(0,guideProgress-.025),Math.min(1,guideProgress+.22));
+ if(hit.distance>38||hit.progress<guideProgress-0.045){
+   strokeValid=false;
+   $("traceMsg").textContent="Te saliste del recorrido. Pulsa Borrar e inténtalo otra vez.";
+   return;
+ }
+ guideProgress=Math.max(guideProgress,hit.progress);
+ cur.push(p);drawT();
+};
+function finishStroke(){
+ if(!cur)return;
+ const path=guidePaths[activeGuide],last=cur[cur.length-1];
+ const nearEnd=dist(last,path[path.length-1])<=42;
+ const enoughProgress=guideProgress>=.94;
+ cur=null;
+ if(strokeValid&&nearEnd&&enoughProgress){
+   activeGuide++;
+   if(activeGuide>=guidePaths.length){
+     $("traceMsg").textContent="✓ ¡Excelente! El trazo del número "+n+" está correcto.";
+     if(!trazoCompletadoSumado){
+       trazoCompletadoSumado=true;
+       notificarAvance({ trazoNumero: n, sumarPunto: 1 });
+     }
+   }else{
+     $("traceMsg").textContent="✓ ¡Primer trazo correcto! Ahora sigue el punto verde del siguiente trazo.";
+   }
+ }else{
+   strokes.pop();
+   $("traceMsg").textContent=strokeValid
+     ?"Aún no llegas al final. Repite este trazo desde el punto verde."
+     :"El trazo se salió de la guía. Pulsa Borrar para intentarlo de nuevo.";
+ }
+ drawT();
+}
+cv.onpointerup=finishStroke;
+cv.onpointercancel=finishStroke;
+$("borrar").onclick=()=>{trazoCompletadoSumado=false;resetTrace("Trazo borrado. Empieza en el punto verde.");};
 const tabs=[["t1","s1"],["t2","s2"]];
-tabs.forEach(([t,s])=>$(t).onclick=()=>{tabs.forEach(([a,b])=>{$(a).classList.toggle("on",a===t);$(b).classList.toggle("on",b===s)});if(s==="s2"){strokes=[];drawT()}});
+tabs.forEach(([t,s])=>$(t).onclick=()=>{tabs.forEach(([a,b])=>{$(a).classList.toggle("on",a===t);$(b).classList.toggle("on",b===s)});if(s==="s2"){resetTrace("Empieza en el punto verde y sigue la línea.")}});
 setN(1);quiz();
-if(location.hash==="#trazo")$("t2").click();
+</script>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+  import {
+    doc,
+    setDoc,
+    updateDoc,
+    increment,
+    arrayUnion
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+  let uidActual = null;
+  const colaPendiente = [];
+
+  async function guardarEnFirestore(detalle) {
+    if (!uidActual || !detalle) return;
+
+    const progresoRef = doc(db, "usuarios", uidActual, "progreso", "actividades");
+    const usuarioRef = doc(db, "usuarios", uidActual);
+    const cambiosProgreso = { actualizadoEn: new Date().toISOString() };
+
+    if (typeof detalle.numeroVisto === "number") {
+      cambiosProgreso.numerosVistos = arrayUnion(detalle.numeroVisto);
+    }
+    if (typeof detalle.coloreoNumero === "number") {
+      cambiosProgreso.coloreoCompletados = arrayUnion(detalle.coloreoNumero);
+    }
+    if (typeof detalle.aciertoConteo === "number") {
+      cambiosProgreso.aciertosConteo = increment(1);
+    }
+    if (typeof detalle.trazoNumero === "number") {
+      cambiosProgreso.trazosPracticados = arrayUnion(detalle.trazoNumero);
+    }
+
+    try {
+      await setDoc(progresoRef, cambiosProgreso, { merge: true });
+      if (typeof detalle.sumarPunto === "number" && detalle.sumarPunto > 0) {
+        await updateDoc(usuarioRef, {
+          puntajeTotal: increment(detalle.sumarPunto),
+          actualizadoEn: new Date().toISOString()
+        });
+      }
+    } catch (err) {
+      console.error("Error al guardar avance de números/trazo:", err);
+    }
+  }
+
+  window.addEventListener("matplay:avance", (e) => {
+    const detalle = e.detail;
+    if (uidActual) {
+      guardarEnFirestore(detalle);
+    } else {
+      colaPendiente.push(detalle);
+    }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      location.href = "index.html";
+      return;
+    }
+    uidActual = user.uid;
+    guardarEnFirestore({ numeroVisto: 1 });
+    while (colaPendiente.length > 0) {
+      guardarEnFirestore(colaPendiente.shift());
+    }
+  });
 </script>
 </body>
 </html>
