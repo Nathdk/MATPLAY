@@ -101,12 +101,15 @@
     cursor: pointer;
     transition: transform .08s, box-shadow .08s;
   }
+  .btn:disabled { opacity: .65; cursor: not-allowed; }
   .btn:focus-visible, .enlace:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
   .btn-primario { background: var(--primario); color: #fff; box-shadow: 0 5px 0 #1D4ED8; }
-  .btn-primario:active { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
+  .btn-primario:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
   .btn-suave { background: transparent; color: var(--primario); border: 2.5px solid var(--primario); margin-top: 12px; }
 
   .acciones { display: grid; gap: 10px; margin-top: 8px; }
+
+  .aviso { color: var(--reintentar); font-size: 15px; margin-top: 12px; min-height: 20px; }
 
   /* Recuperar: mensaje de envío */
   .ok-envio { display: flex; gap: 14px; align-items: flex-start; }
@@ -200,12 +203,12 @@
           </span>
           <span><small>Puntaje</small><b id="puntos">0</b></span>
         </div>
-        <button class="salir" type="button" data-ir="login" aria-label="Salir">
+        <button class="salir" type="button" id="btn-salir" aria-label="Salir">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
         </button>
       </div>
 
-      <h1 id="t-menu">¡Bienvenido, <span id="nombre">Mateo</span>!</h1>
+      <h1 id="t-menu">¡Bienvenido, <span id="nombre">jugador</span>!</h1>
       <p class="sub">¿Qué quieres hacer hoy?</p>
 
       <nav class="opciones" aria-label="Actividades">
@@ -243,6 +246,7 @@
           <input id="c-correo" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
         </div>
         <div class="acciones"><button class="btn btn-primario" type="submit">Enviar</button></div>
+        <p class="aviso" id="msg-recuperar" role="status" aria-live="polite"></p>
       </form>
 
       <div class="tarjeta padres" id="envio-ok" role="status" hidden>
@@ -263,7 +267,6 @@
 </div>
 
 <script>
-  // Rutas de cada pantalla. Cuando se junten los archivos del equipo, solo cambien estos nombres.
   const RUTAS = {
     login: 'index.html',
     numeros: 'Aprender_n_meros_y_Trazo.html',
@@ -274,27 +277,84 @@
 
   const pantallas = document.querySelectorAll('.pantalla');
   function ir(id) {
-    // Si la pantalla no está en este archivo, se abre el archivo correspondiente
     if (!document.getElementById(id)) { location.href = RUTAS[id] || RUTAS.login; return; }
     pantallas.forEach(p => p.classList.toggle('activa', p.id === id));
     window.scrollTo(0, 0);
     const h1 = document.querySelector('#' + id + ' h1');
-    h1.setAttribute('tabindex', '-1');
-    h1.focus({ preventScroll: true });
+    if (h1) {
+      h1.setAttribute('tabindex', '-1');
+      h1.focus({ preventScroll: true });
+    }
   }
   document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
   document.querySelectorAll('[data-ruta]').forEach(a => { a.href = RUTAS[a.dataset.ruta]; });
 
-  // Recuperar: solo muestra el aviso (el envío real va después)
-  document.getElementById('form-recuperar').addEventListener('submit', e => {
-    e.preventDefault();
-    e.target.hidden = true;
-    document.getElementById('envio-ok').hidden = false;
-  });
-
-  // Para ver cada pantalla por separado: archivo.html#recuperar o archivo.html#menu
   const inicial = location.hash.slice(1);
   if (inicial && document.getElementById(inicial)) ir(inicial);
+</script>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import {
+    onAuthStateChanged,
+    signOut,
+    sendPasswordResetEmail
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+  import {
+    doc,
+    getDoc
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+  const elNombre = document.getElementById("nombre");
+  const elPuntos = document.getElementById("puntos");
+  const btnSalir = document.getElementById("btn-salir");
+  const formRecuperar = document.getElementById("form-recuperar");
+  const msgRecuperar = document.getElementById("msg-recuperar");
+  const envioOk = document.getElementById("envio-ok");
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      location.href = "index.html";
+      return;
+    }
+
+    try {
+      const snap = await getDoc(doc(db, "usuarios", user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (elNombre && data.nombreNino) elNombre.textContent = data.nombreNino;
+        if (elPuntos) elPuntos.textContent = data.puntajeTotal ?? 0;
+      }
+    } catch (err) {
+      console.error("Error al cargar perfil:", err);
+    }
+  });
+
+  btnSalir.addEventListener("click", async () => {
+    try {
+      await signOut(auth);
+    } finally {
+      location.href = "index.html";
+    }
+  });
+
+  formRecuperar.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = formRecuperar.querySelector("button[type='submit']");
+    const correo = document.getElementById("c-correo").value.trim();
+
+    btn.disabled = true;
+    msgRecuperar.textContent = "Enviando enlace...";
+
+    try {
+      await sendPasswordResetEmail(auth, correo);
+      formRecuperar.hidden = true;
+      envioOk.hidden = false;
+    } catch (err) {
+      msgRecuperar.textContent = "No se pudo enviar el correo. Verifica la dirección e inténtalo de nuevo.";
+      btn.disabled = false;
+    }
+  });
 </script>
 </body>
 </html>
