@@ -201,6 +201,10 @@ h1{font:800 clamp(30px,5vw,40px)/1.08 var(--titulos);margin-bottom:5px}
     screens.forEach(s => s.classList.toggle('activa', s.id === tab.dataset.screen));
   }));
 
+  function notificarJuego(detail) {
+    window.dispatchEvent(new CustomEvent('matplay:juego', { detail }));
+  }
+
   let modo = 'suma', correcto = 5, puntos = 0, numeroEjercicio = 1, contestado = false;
   const modos = document.querySelectorAll('.modo');
   modos.forEach(btn => btn.addEventListener('click', () => {
@@ -256,6 +260,7 @@ h1{font:800 clamp(30px,5vw,40px)/1.08 var(--titulos);margin-bottom:5px}
       $('mensaje').className = 'mensaje ok';
       btn.classList.add('correcta');
       $('opciones').querySelectorAll('button').forEach(b => b.disabled = true);
+      notificarJuego({ tipo: 'operacion', modo, sumarPunto: 1 });
     } else {
       btn.classList.add('incorrecta');
       btn.disabled = true;
@@ -305,7 +310,10 @@ h1{font:800 clamp(30px,5vw,40px)/1.08 var(--titulos);margin-bottom:5px}
       parejas++;
       $('parejas').textContent = parejas;
       primera = null;
-      if (parejas === numeros.length) $('final').textContent = '🎉 ¡Lo lograste! Encontraste todas las parejas.';
+      if (parejas === numeros.length) {
+        $('final').textContent = '🎉 ¡Lo lograste! Encontraste todas las parejas.';
+        notificarJuego({ tipo: 'memorama_ganado', intentos, sumarPunto: 2 });
+      }
     } else {
       bloqueo = true;
       const anterior = primera;
@@ -324,6 +332,82 @@ h1{font:800 clamp(30px,5vw,40px)/1.08 var(--titulos);margin-bottom:5px}
   crearMemorama();
   if (location.hash === '#memorama') document.querySelector('[data-screen="memorama"]').click();
 })();
+</script>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-auth.js";
+  import {
+    doc,
+    getDoc,
+    setDoc,
+    updateDoc,
+    increment
+  } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js";
+
+  let uidActual = null;
+  const colaPendiente = [];
+
+  async function guardarEventoJuego(detalle) {
+    if (!uidActual || !detalle) return;
+
+    const progresoRef = doc(db, "usuarios", uidActual, "progreso", "actividades");
+    const usuarioRef = doc(db, "usuarios", uidActual);
+    const ahora = new Date().toISOString();
+
+    try {
+      if (detalle.tipo === "operacion") {
+        const campo = detalle.modo === "resta" ? "aciertosResta" : "aciertosSuma";
+        await setDoc(progresoRef, {
+          [campo]: increment(1),
+          actualizadoEn: ahora
+        }, { merge: true });
+      }
+
+      if (detalle.tipo === "memorama_ganado") {
+        const snap = await getDoc(progresoRef);
+        const prev = snap.exists() ? snap.data() : {};
+        const mejorActual = typeof prev.memoramaMejorIntentos === "number"
+          ? Math.min(prev.memoramaMejorIntentos, detalle.intentos)
+          : detalle.intentos;
+
+        await setDoc(progresoRef, {
+          memoramaPartidasGanadas: increment(1),
+          memoramaMejorIntentos: mejorActual,
+          actualizadoEn: ahora
+        }, { merge: true });
+      }
+
+      if (typeof detalle.sumarPunto === "number" && detalle.sumarPunto > 0) {
+        await updateDoc(usuarioRef, {
+          puntajeTotal: increment(detalle.sumarPunto),
+          actualizadoEn: ahora
+        });
+      }
+    } catch (err) {
+      console.error("Error al guardar progreso del juego:", err);
+    }
+  }
+
+  window.addEventListener("matplay:juego", (e) => {
+    const detalle = e.detail;
+    if (uidActual) {
+      guardarEventoJuego(detalle);
+    } else {
+      colaPendiente.push(detalle);
+    }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      location.href = "index.html";
+      return;
+    }
+    uidActual = user.uid;
+    while (colaPendiente.length > 0) {
+      guardarEventoJuego(colaPendiente.shift());
+    }
+  });
 </script>
 </body>
 </html>
