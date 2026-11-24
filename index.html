@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MatPlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primario: #2563EB;
+    --acento: #FACC15;
+    --verde: #22C55E;
+    --naranja: #FB923C;
+    --morado: #7C3AED;
+    --fondo: #F4F8FF;
+    --superficie: #FFFFFF;
+    --texto: #1F2937;
+    --texto-sec: #64748B;
+    --reintentar: #F97316;
+    --padres: #475569;
+    --padres-claro: #E2E8F0;
+    --titulos: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+    --cuerpo: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--cuerpo);
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 420px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Barra superior */
+  .barra {
+    background: var(--primario);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo { display: flex; gap: 4px; }
+  .logo i {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    font: 800 16px/1 var(--titulos); font-style: normal; color: #fff;
+  }
+  .logo i:nth-child(1) { background: var(--verde); }
+  .logo i:nth-child(2) { background: var(--naranja); }
+  .logo i:nth-child(3) { background: var(--morado); }
+  .barra b { font: 800 24px/1 var(--titulos); letter-spacing: .5px; }
+
+  /* Pantallas */
+  main { flex: 1; padding: 28px 20px 32px; }
+  .pantalla { display: none; }
+  .pantalla.activa { display: block; }
+
+  h1 { font: 800 34px/1.1 var(--titulos); margin-bottom: 6px; }
+  .sub { color: var(--texto-sec); margin-bottom: 22px; }
+
+  .tarjeta {
+    background: var(--superficie);
+    border-radius: 24px;
+    padding: 22px 18px;
+    box-shadow: 0 6px 0 rgba(37, 99, 235, .12);
+    margin-bottom: 16px;
+  }
+  .tarjeta.padres { background: var(--padres-claro); box-shadow: none; }
+  .tarjeta h2 { font: 800 18px/1.2 var(--titulos); margin-bottom: 14px; }
+  .tarjeta.padres h2 { color: var(--padres); }
+  .tarjeta.nino h2 { color: var(--primario); }
+
+  .campo { margin-bottom: 14px; }
+  .campo:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 15px; margin-bottom: 6px; color: var(--texto-sec); }
+  .entrada { position: relative; }
+  input {
+    width: 100%;
+    font: 700 17px var(--cuerpo);
+    color: var(--texto);
+    background: var(--superficie);
+    border: 2.5px solid var(--padres-claro);
+    border-radius: 16px;
+    padding: 14px 16px;
+    min-height: 54px;
+  }
+  .padres input { border-color: #CBD5E1; }
+  input::placeholder { color: #94A3B8; }
+  input:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 4px rgba(37, 99, 235, .18); }
+  input:user-invalid { border-color: var(--reintentar); }
+  .ojo {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    width: 44px; height: 44px; border: 0; border-radius: 12px;
+    background: transparent; color: var(--texto-sec); cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .ojo:focus-visible { outline: 3px solid var(--primario); }
+  .ojo svg { width: 24px; height: 24px; }
+  .entrada.con-ojo input { padding-right: 56px; }
+
+  /* Botones */
+  .btn {
+    width: 100%; min-height: 58px;
+    border: 0; border-radius: 18px;
+    font: 800 20px var(--titulos);
+    cursor: pointer;
+    transition: transform .08s, box-shadow .08s;
+  }
+  .btn:focus-visible, .enlace:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+  .btn-primario { background: var(--primario); color: #fff; box-shadow: 0 5px 0 #1D4ED8; }
+  .btn-primario:active { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
+  .btn-jugar { background: var(--acento); color: var(--texto); box-shadow: 0 5px 0 #CA9A04; }
+  .btn-jugar:active { transform: translateY(4px); box-shadow: 0 1px 0 #CA9A04; }
+  .btn-suave { background: transparent; color: var(--primario); border: 2.5px solid var(--primario); margin-top: 12px; }
+
+  .acciones { display: grid; gap: 10px; margin-top: 8px; }
+  .acciones.dos { grid-template-columns: 1.4fr 1fr; align-items: stretch; }
+  .acciones.dos .btn-suave { margin-top: 0; }
+
+  .enlaces { display: flex; justify-content: center; gap: 8px; margin-top: 22px; flex-wrap: wrap; }
+  .enlace {
+    background: none; border: 0; cursor: pointer;
+    font: 800 16px var(--cuerpo); color: var(--primario);
+    padding: 12px 10px; border-radius: 10px; min-height: 44px;
+    text-decoration: underline; text-underline-offset: 4px;
+  }
+  .sep { color: var(--texto-sec); align-self: center; }
+
+  .aviso { color: var(--texto-sec); font-size: 15px; margin-top: 10px; }
+
+  /* Pantalla de login: números flotando */
+  .numeros { display: flex; justify-content: center; gap: 12px; margin: 4px 0 24px; }
+  .num {
+    width: 62px; height: 62px; border-radius: 20px; color: #fff;
+    display: grid; place-items: center;
+    font: 800 36px/1 var(--titulos);
+  }
+  .num:nth-child(1) { background: var(--verde); transform: rotate(-6deg); }
+  .num:nth-child(2) { background: var(--naranja); transform: translateY(-8px) rotate(3deg); }
+  .num:nth-child(3) { background: var(--morado); transform: rotate(-3deg); }
+  .num:nth-child(4) { background: var(--acento); color: var(--texto); transform: translateY(-4px) rotate(6deg); }
+
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="barra">
+    <span class="logo" aria-hidden="true"><i>1</i><i>+</i><i>=</i></span>
+    <b>MatPlay</b>
+  </header>
+
+  <main>
+    <!-- LOGIN -->
+    <section class="pantalla activa" id="login" aria-labelledby="t-login">
+      <div class="numeros" aria-hidden="true">
+        <span class="num">1</span><span class="num">2</span><span class="num">3</span><span class="num">4</span>
+      </div>
+      <h1 id="t-login">¡Bienvenido!</h1>
+      <p class="sub">Entra para aprender y jugar con los números.</p>
+
+      <form class="tarjeta" data-form>
+        <div class="campo">
+          <label for="l-usuario">Usuario</label>
+          <input id="l-usuario" type="text" autocomplete="username" placeholder="Tu usuario" required>
+        </div>
+        <div class="campo">
+          <label for="l-pass">Contraseña</label>
+          <div class="entrada con-ojo">
+            <input id="l-pass" type="password" autocomplete="current-password" placeholder="••••••" required>
+            <button type="button" class="ojo" data-ojo aria-label="Mostrar contraseña"></button>
+          </div>
+        </div>
+        <div class="acciones"><button class="btn btn-jugar" type="submit">Entrar</button></div>
+      </form>
+
+      <div class="enlaces">
+        <button class="enlace" data-ir="registro">Crear cuenta</button>
+        <span class="sep" aria-hidden="true">/</span>
+        <button class="enlace" data-ir="recuperar">Recuperar contraseña</button>
+      </div>
+    </section>
+
+    <!-- REGISTRO -->
+    <section class="pantalla" id="registro" aria-labelledby="t-registro">
+      <h1 id="t-registro">Crear cuenta</h1>
+      <p class="sub">Un adulto llena esta información.</p>
+
+      <form data-form>
+        <div class="tarjeta padres">
+          <h2>Datos del tutor</h2>
+          <div class="campo">
+            <label for="r-tutor">Nombre del tutor</label>
+            <input id="r-tutor" type="text" autocomplete="name" placeholder="Nombre completo" required>
+          </div>
+          <div class="campo">
+            <label for="r-correo">Correo del tutor</label>
+            <input id="r-correo" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
+          </div>
+        </div>
+
+        <div class="tarjeta nino">
+          <h2>Cuenta del niño o la niña</h2>
+          <div class="campo">
+            <label for="r-usuario">Usuario</label>
+            <input id="r-usuario" type="text" autocomplete="username" placeholder="Elige un usuario" required>
+          </div>
+          <div class="campo">
+            <label for="r-pass">Contraseña</label>
+            <div class="entrada con-ojo">
+              <input id="r-pass" type="password" autocomplete="new-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+              <button type="button" class="ojo" data-ojo aria-label="Mostrar contraseña"></button>
+            </div>
+          </div>
+          <div class="campo">
+            <label for="r-nino">Nombre del niño</label>
+            <input id="r-nino" type="text" placeholder="¿Cómo se llama?" required>
+          </div>
+        </div>
+
+        <div class="acciones dos">
+          <button class="btn btn-primario" type="submit">Registrar</button>
+          <button class="btn btn-suave" type="button" data-ir="login">Volver</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- RECUPERAR CONTRASEÑA -->
+    <section class="pantalla" id="recuperar" aria-labelledby="t-recuperar">
+      <h1 id="t-recuperar">Recuperar contraseña</h1>
+      <p class="sub">Te enviaremos un mensaje al correo del tutor.</p>
+
+      <form class="tarjeta padres" data-form>
+        <div class="campo">
+          <label for="c-correo">Correo del tutor</label>
+          <input id="c-correo" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
+        </div>
+        <div class="acciones"><button class="btn btn-primario" type="submit">Enviar</button></div>
+      </form>
+      <button class="btn btn-suave" type="button" data-ir="login">← Volver</button>
+    </section>
+  </main>
+</div>
+
+<script>
+  // Solo navegación visual entre pantallas (la lógica real va después)
+  const pantallas = document.querySelectorAll('.pantalla');
+  function ir(id) {
+    pantallas.forEach(p => p.classList.toggle('activa', p.id === id));
+    window.scrollTo(0, 0);
+    document.querySelector('#' + id + ' h1').setAttribute('tabindex', '-1');
+    document.querySelector('#' + id + ' h1').focus({ preventScroll: true });
+  }
+  document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
+  document.querySelectorAll('[data-form]').forEach(f => f.addEventListener('submit', e => e.preventDefault()));
+
+  // Login: al presionar Entrar pasa al menú principal
+  document.querySelector('#login form').addEventListener('submit', () => {
+    location.href = 'Menu.html#menu';
+  });
+
+  document.querySelector('#registro form').addEventListener('submit', () => {
+    location.href = 'Menu.html#menu';
+  });
+
+  // Mostrar / ocultar contraseña
+  const ojoAbierto = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const ojoCerrado = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/></svg>';
+  document.querySelectorAll('[data-ojo]').forEach(b => {
+    const input = b.previousElementSibling;
+    b.innerHTML = ojoAbierto;
+    b.addEventListener('click', () => {
+      const oculto = input.type === 'password';
+      input.type = oculto ? 'text' : 'password';
+      b.innerHTML = oculto ? ojoCerrado : ojoAbierto;
+      b.setAttribute('aria-label', oculto ? 'Ocultar contraseña' : 'Mostrar contraseña');
+    });
+  });
+</script>
+</body>
+</html>

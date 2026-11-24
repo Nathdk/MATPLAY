@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MatPlay | Suma, resta y memorama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --primario:#2563EB; --acento:#FACC15; --verde:#22C55E;
+  --naranja:#FB923C; --morado:#7C3AED; --fondo:#F4F8FF;
+  --superficie:#FFFFFF; --texto:#1F2937; --texto-sec:#64748B;
+  --correcta:#16A34A; --reintentar:#F97316; --padres:#475569;
+  --padres-claro:#E2E8F0; --titulos:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --cuerpo:"Nunito","Trebuchet MS",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;background:var(--fondo);color:var(--texto);font-family:var(--cuerpo);font-weight:700}
+button{font:inherit;cursor:pointer}
+.app{width:100%;max-width:900px;min-height:100vh;margin:auto;background:var(--fondo)}
+.barra{background:var(--primario);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 0 rgba(29,78,216,.14)}
+.logo{display:flex;gap:4px;align-items:center}
+.logo i{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font:800 16px/1 var(--titulos);font-style:normal;color:#fff}
+.logo i:nth-child(1){background:var(--verde)}.logo i:nth-child(2){background:var(--naranja)}.logo i:nth-child(3){background:var(--morado)}
+.barra b{font:800 26px/1 var(--titulos);letter-spacing:.4px}
+.volver{margin-left:auto;color:#fff;text-decoration:none;font:800 16px var(--titulos);border:2px solid #fff;border-radius:12px;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center}
+.volver:focus-visible{outline:3px solid #fff;outline-offset:3px}
+main{padding:24px 18px 36px}
+.intro{text-align:center;margin-bottom:20px}
+h1{font:800 clamp(30px,5vw,40px)/1.08 var(--titulos);margin-bottom:5px}
+.sub{color:var(--texto-sec);font-size:16px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 auto 20px;max-width:580px}
+.tab{border:3px solid var(--naranja);background:#fff;color:var(--texto);border-radius:18px;padding:12px 10px;font:800 18px var(--titulos);min-height:56px}
+.tab[data-screen="memorama"]{border-color:var(--morado)}
+.tab.activo[data-screen="sumas"]{background:var(--naranja);color:#fff}
+.tab.activo[data-screen="memorama"]{background:var(--morado);color:#fff}
+.pantalla{display:none}.pantalla.activa{display:block}
+.tarjeta{background:var(--superficie);border-radius:24px;padding:20px;margin-bottom:16px;box-shadow:0 6px 0 rgba(37,99,235,.10)}
+.tarjeta h2{font:800 21px/1.2 var(--titulos);margin-bottom:12px}
+.naranja{color:#D97706}.morado{color:var(--morado)}.azul{color:var(--primario)}
+.modos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modo{border:2.5px solid var(--padres-claro);background:#fff;color:var(--texto);border-radius:16px;padding:12px;font:800 18px var(--titulos);min-height:52px}
+.modo.activo{background:#FFF1E6;border-color:var(--naranja);color:#9A3412}
+.marcador{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pildora{background:#FFF7CC;border-radius:14px;padding:8px 14px;color:var(--texto);font-size:15px}
+.pildora strong{color:#92400E}
+.operacion{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px}
+.numero-op{background:#FFF1E6;color:#9A3412;border:3px solid #FDBA74;border-radius:20px;min-width:90px;padding:12px 16px;text-align:center;font:800 clamp(38px,7vw,54px)/1 var(--titulos)}
+.signo{font:800 42px var(--titulos);color:var(--naranja)}
+.igual{font:800 38px var(--titulos);color:var(--texto-sec)}
+.respuesta{width:112px;min-height:80px;border:3px solid var(--naranja);border-radius:20px;text-align:center;font:800 42px var(--titulos);color:var(--texto);background:#fff}
+.respuesta:focus{outline:4px solid rgba(251,146,60,.22)}
+.opciones{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:520px;margin:0 auto}
+.opcion{border:3px solid var(--naranja);background:#fff;border-radius:17px;min-height:62px;font:800 27px var(--titulos);color:var(--texto)}
+.opcion:hover{background:#FFF1E6}
+.opcion.correcta{background:var(--correcta);border-color:var(--correcta);color:#fff}
+.opcion.incorrecta{background:#FFF0E5;border-color:var(--reintentar);color:#C2410C}
+.mensaje{min-height:32px;text-align:center;font-size:18px;font-weight:800;margin:14px 0 2px}
+.mensaje.ok{color:var(--correcta)}.mensaje.error{color:var(--reintentar)}
+.acciones{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.btn{border:0;border-radius:17px;padding:12px 20px;min-height:52px;font:800 18px var(--titulos)}
+.btn-azul{background:var(--primario);color:#fff;box-shadow:0 4px 0 #1D4ED8}
+.btn-jugar{background:var(--acento);color:var(--texto);box-shadow:0 4px 0 #CA9A04}
+.btn-suave{background:#fff;border:2.5px solid var(--primario);color:var(--primario)}
+.btn:active{transform:translateY(2px)}
+.pista{text-align:center;color:var(--texto-sec);font-size:14px;margin-top:12px}
+.mem-info{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.mem-info .pildora{background:#F0E9FF;color:#4C1D95}
+.mem-info strong{color:#4C1D95}
+.tablero{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;max-width:560px;margin:0 auto}
+.carta{
+  display:block;width:100%;height:auto;min-width:0;aspect-ratio:1;
+  border:0;background:transparent;padding:0;border-radius:17px;
+  perspective:900px;cursor:pointer;touch-action:manipulation;
+}
+.carta:focus-visible{outline:4px solid var(--acento);outline-offset:3px}
+.carta-interior{
+  position:relative;display:block;width:100%;height:100%;min-height:76px;
+  transform-style:preserve-3d;-webkit-transform-style:preserve-3d;
+  transition:transform .35s ease;
+}
+.carta.volteada .carta-interior,.carta.encontrada .carta-interior{
+  transform:rotateY(180deg);-webkit-transform:rotateY(180deg);
+}
+.cara{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  border-radius:17px;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  font-size:clamp(27px,5vw,42px);font-weight:800;line-height:1;
+}
+.frente{
+  background:linear-gradient(145deg,#8B5CF6,var(--morado));
+  color:#fff;border:3px solid #6D28D9;
+  box-shadow:0 4px 0 rgba(76,29,149,.22);
+}
+.simbolo-carta{font:800 42px var(--titulos);color:#fff}
+.reverso{
+  background:#F0E9FF;color:#4C1D95;border:3px solid #C4B5FD;
+  transform:rotateY(180deg);-webkit-transform:rotateY(180deg);
+}
+.carta.encontrada .reverso{background:#DCFCE7;border-color:var(--correcta)}
+.carta.encontrada{cursor:default}
+.carta:disabled{opacity:1}
+@media(max-width:520px){
+ .tablero{gap:7px}.cara{border-radius:13px}.carta-interior{min-height:62px}
+}
+.final{text-align:center;font:800 24px var(--titulos);color:var(--morado);margin-top:14px;min-height:32px}
+.pie{text-align:center;color:var(--texto-sec);font-size:13px;padding:0 15px 20px}
+@media(max-width:520px){
+ main{padding:18px 12px 28px}.tarjeta{padding:16px;border-radius:20px}
+ .barra b{font-size:23px}.tab{font-size:16px;padding:10px 6px}
+ .numero-op{min-width:68px;padding:10px 8px}.operacion{gap:7px}
+ .respuesta{width:82px;min-height:68px;font-size:34px}
+ .tablero{gap:7px}.cara{border-radius:13px}.carta-interior{min-height:62px}
+ .btn{width:100%}.acciones{gap:9px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="barra">
+    <span class="logo" aria-hidden="true"><i>1</i><i>+</i><i>=</i></span>
+    <b>MatPlay</b>
+    <a class="volver" href="Menu.html#menu">← Menú</a>
+  </header>
+  <main>
+    <div class="intro">
+      <h1>¡Vamos a jugar!</h1>
+      <p class="sub">Practica matemáticas mientras te diviertes.</p>
+    </div>
+    <nav class="tabs" aria-label="Actividades">
+      <button class="tab activo" data-screen="sumas" aria-pressed="true">➕ Suma y resta</button>
+      <button class="tab" data-screen="memorama" aria-pressed="false">🃏 Memorama</button>
+    </nav>
+
+    <section class="pantalla activa" id="sumas" aria-labelledby="titulo-sumas">
+      <div class="tarjeta">
+        <h2 class="naranja" id="titulo-sumas">Elige qué quieres practicar</h2>
+        <div class="modos">
+          <button class="modo activo" data-mode="suma" aria-pressed="true">➕ Sumas</button>
+          <button class="modo" data-mode="resta" aria-pressed="false">➖ Restas</button>
+        </div>
+      </div>
+      <div class="tarjeta">
+        <div class="marcador">
+          <span class="pildora">⭐ Puntos: <strong id="puntos">0</strong></span>
+          <span class="pildora">Ejercicio: <strong id="contador">1</strong></span>
+        </div>
+        <h2 class="azul" style="text-align:center">Resuelve la operación</h2>
+        <div class="operacion" aria-live="polite">
+          <span class="numero-op" id="a">3</span>
+          <span class="signo" id="signo">+</span>
+          <span class="numero-op" id="b">2</span>
+          <span class="igual">=</span>
+          <span class="respuesta" id="respuesta" aria-label="Respuesta">?</span>
+        </div>
+        <div class="opciones" id="opciones" aria-label="Opciones de respuesta"></div>
+        <p class="mensaje" id="mensaje" aria-live="polite"></p>
+        <div class="acciones">
+          <button class="btn btn-jugar" id="siguiente">Siguiente ejercicio ➜</button>
+          <button class="btn btn-suave" id="reiniciar">Volver a empezar</button>
+        </div>
+        <p class="pista">Elige la respuesta correcta. ¡Tú puedes!</p>
+      </div>
+    </section>
+
+    <section class="pantalla" id="memorama" aria-labelledby="titulo-memorama">
+      <div class="tarjeta">
+        <h2 class="morado" id="titulo-memorama">Encuentra las parejas</h2>
+        <p class="sub">Voltea las cartas y encuentra los números iguales.</p>
+      </div>
+      <div class="tarjeta">
+        <div class="mem-info">
+          <span class="pildora">🧩 Parejas: <strong id="parejas">0</strong>/8</span>
+          <span class="pildora">👆 Intentos: <strong id="intentos">0</strong></span>
+        </div>
+        <div class="tablero" id="tablero" aria-label="Tablero de memorama"></div>
+        <p class="final" id="final" aria-live="polite"></p>
+        <div class="acciones">
+          <button class="btn btn-jugar" id="nuevo-memorama">🔄 Revolver cartas</button>
+        </div>
+        <p class="pista">Consejo: recuerda dónde viste cada número.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="pie">MatPlay · Aprende, practica y diviértete</footer>
+</div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const tabs = document.querySelectorAll('.tab');
+  const screens = document.querySelectorAll('.pantalla');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(t => {
+      const active = t === tab;
+      t.classList.toggle('activo', active);
+      t.setAttribute('aria-pressed', String(active));
+    });
+    screens.forEach(s => s.classList.toggle('activa', s.id === tab.dataset.screen));
+  }));
+
+  let modo = 'suma', correcto = 5, puntos = 0, numeroEjercicio = 1, contestado = false;
+  const modos = document.querySelectorAll('.modo');
+  modos.forEach(btn => btn.addEventListener('click', () => {
+    modo = btn.dataset.mode;
+    modos.forEach(b => {
+      const active = b === btn;
+      b.classList.toggle('activo', active);
+      b.setAttribute('aria-pressed', String(active));
+    });
+    nuevoEjercicio();
+  }));
+
+  function mezclar(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+  function nuevoEjercicio() {
+    contestado = false;
+    let x = Math.floor(Math.random() * 10) + 1;
+    let y = Math.floor(Math.random() * 10) + 1;
+    if (modo === 'resta' && y > x) [x, y] = [y, x];
+    correcto = modo === 'suma' ? x + y : x - y;
+    $('a').textContent = x;
+    $('b').textContent = y;
+    $('signo').textContent = modo === 'suma' ? '+' : '−';
+    $('respuesta').textContent = '?';
+    $('mensaje').textContent = '';
+    $('mensaje').className = 'mensaje';
+    const set = new Set([correcto]);
+    while (set.size < 3) set.add(Math.max(0, correcto + Math.floor(Math.random() * 9) - 4));
+    const opciones = mezclar([...set]);
+    $('opciones').innerHTML = '';
+    opciones.forEach(valor => {
+      const btn = document.createElement('button');
+      btn.className = 'opcion';
+      btn.textContent = valor;
+      btn.addEventListener('click', () => revisar(btn, valor));
+      $('opciones').appendChild(btn);
+    });
+    $('contador').textContent = numeroEjercicio;
+  }
+  function revisar(btn, valor) {
+    if (contestado) return;
+    if (valor === correcto) {
+      contestado = true;
+      puntos++;
+      $('puntos').textContent = puntos;
+      $('respuesta').textContent = valor;
+      $('mensaje').textContent = '✓ ¡Muy bien! Respuesta correcta';
+      $('mensaje').className = 'mensaje ok';
+      btn.classList.add('correcta');
+      $('opciones').querySelectorAll('button').forEach(b => b.disabled = true);
+    } else {
+      btn.classList.add('incorrecta');
+      btn.disabled = true;
+      $('mensaje').textContent = 'Inténtalo otra vez 😊';
+      $('mensaje').className = 'mensaje error';
+    }
+  }
+  $('siguiente').addEventListener('click', () => { numeroEjercicio++; nuevoEjercicio(); });
+  $('reiniciar').addEventListener('click', () => {
+    puntos = 0; numeroEjercicio = 1;
+    $('puntos').textContent = '0';
+    nuevoEjercicio();
+  });
+
+  const numeros = ['1','2','3','4','5','6','7','8'];
+  let primera = null, bloqueo = false, parejas = 0, intentos = 0;
+  function crearMemorama() {
+    primera = null; bloqueo = false; parejas = 0; intentos = 0;
+    $('parejas').textContent = '0';
+    $('intentos').textContent = '0';
+    $('final').textContent = '';
+    const cartas = mezclar([...numeros, ...numeros]);
+    const tablero = $('tablero');
+    tablero.innerHTML = '';
+    cartas.forEach((numero, indice) => {
+      const btn = document.createElement('button');
+      btn.className = 'carta';
+      btn.type = 'button';
+      btn.dataset.numero = numero;
+      btn.setAttribute('aria-label', 'Carta ' + (indice + 1) + ', oculta');
+      btn.innerHTML = '<span class="carta-interior"><span class="cara frente" aria-hidden="true"><span class="simbolo-carta">?</span></span><span class="cara reverso">' + numero + '</span></span>';
+      btn.addEventListener('click', () => voltear(btn));
+      tablero.appendChild(btn);
+    });
+  }
+  function voltear(carta) {
+    if (bloqueo || carta.classList.contains('volteada') || carta.classList.contains('encontrada')) return;
+    carta.classList.add('volteada');
+    carta.setAttribute('aria-label', 'Número ' + carta.dataset.numero);
+    if (!primera) { primera = carta; return; }
+    intentos++;
+    $('intentos').textContent = intentos;
+    if (primera.dataset.numero === carta.dataset.numero) {
+      primera.classList.add('encontrada');
+      carta.classList.add('encontrada');
+      primera.disabled = true; carta.disabled = true;
+      parejas++;
+      $('parejas').textContent = parejas;
+      primera = null;
+      if (parejas === numeros.length) $('final').textContent = '🎉 ¡Lo lograste! Encontraste todas las parejas.';
+    } else {
+      bloqueo = true;
+      const anterior = primera;
+      primera = null;
+      window.setTimeout(() => {
+        anterior.classList.remove('volteada');
+        carta.classList.remove('volteada');
+        anterior.setAttribute('aria-label', 'Carta oculta');
+        carta.setAttribute('aria-label', 'Carta oculta');
+        bloqueo = false;
+      }, 750);
+    }
+  }
+  $('nuevo-memorama').addEventListener('click', crearMemorama);
+  nuevoEjercicio();
+  crearMemorama();
+  if (location.hash === '#memorama') document.querySelector('[data-screen="memorama"]').click();
+})();
+</script>
+</body>
+</html>

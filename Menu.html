@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MatPlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primario: #2563EB;
+    --acento: #FACC15;
+    --verde: #22C55E;
+    --naranja: #FB923C;
+    --morado: #7C3AED;
+    --fondo: #F4F8FF;
+    --superficie: #FFFFFF;
+    --texto: #1F2937;
+    --texto-sec: #64748B;
+    --reintentar: #F97316;
+    --padres: #475569;
+    --padres-claro: #E2E8F0;
+    --titulos: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+    --cuerpo: "Nunito", "Trebuchet MS", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
+  html, body { min-height: 100%; }
+  body {
+    background: var(--fondo);
+    color: var(--texto);
+    font-family: var(--cuerpo);
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+  }
+  .app { width: 100%; max-width: 420px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Barra superior */
+  .barra {
+    background: var(--primario);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo { display: flex; gap: 4px; }
+  .logo i {
+    width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center;
+    font: 800 16px/1 var(--titulos); font-style: normal; color: #fff;
+  }
+  .logo i:nth-child(1) { background: var(--verde); }
+  .logo i:nth-child(2) { background: var(--naranja); }
+  .logo i:nth-child(3) { background: var(--morado); }
+  .barra b { font: 800 24px/1 var(--titulos); letter-spacing: .5px; }
+
+  /* Pantallas */
+  main { flex: 1; padding: 28px 20px 32px; }
+  .pantalla { display: none; }
+  .pantalla.activa { display: block; }
+
+  h1 { font: 800 34px/1.1 var(--titulos); margin-bottom: 6px; }
+  h1:focus { outline: none; }
+  .sub { color: var(--texto-sec); margin-bottom: 22px; }
+
+  .tarjeta {
+    background: var(--superficie);
+    border-radius: 24px;
+    padding: 22px 18px;
+    box-shadow: 0 6px 0 rgba(37, 99, 235, .12);
+    margin-bottom: 16px;
+  }
+  .tarjeta.padres { background: var(--padres-claro); box-shadow: none; }
+
+  .campo { margin-bottom: 14px; }
+  .campo:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 15px; margin-bottom: 6px; color: var(--texto-sec); }
+  input {
+    width: 100%;
+    font: 700 17px var(--cuerpo);
+    color: var(--texto);
+    background: var(--superficie);
+    border: 2.5px solid var(--padres-claro);
+    border-radius: 16px;
+    padding: 14px 16px;
+    min-height: 54px;
+  }
+  .padres input { border-color: #CBD5E1; }
+  input::placeholder { color: #94A3B8; }
+  input:focus { outline: none; border-color: var(--primario); box-shadow: 0 0 0 4px rgba(37, 99, 235, .18); }
+  input:user-invalid { border-color: var(--reintentar); }
+
+  /* Botones */
+  .btn {
+    width: 100%; min-height: 58px;
+    border: 0; border-radius: 18px;
+    font: 800 20px var(--titulos);
+    cursor: pointer;
+    transition: transform .08s, box-shadow .08s;
+  }
+  .btn:focus-visible, .enlace:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+  .btn-primario { background: var(--primario); color: #fff; box-shadow: 0 5px 0 #1D4ED8; }
+  .btn-primario:active { transform: translateY(4px); box-shadow: 0 1px 0 #1D4ED8; }
+  .btn-suave { background: transparent; color: var(--primario); border: 2.5px solid var(--primario); margin-top: 12px; }
+
+  .acciones { display: grid; gap: 10px; margin-top: 8px; }
+
+  /* Recuperar: mensaje de envío */
+  .ok-envio { display: flex; gap: 14px; align-items: flex-start; }
+  .ok-envio .check {
+    flex: none; width: 44px; height: 44px; border-radius: 50%;
+    background: var(--verde); color: var(--texto);
+    display: grid; place-items: center;
+  }
+  .ok-envio .check svg { width: 26px; height: 26px; }
+  .ok-envio h2 { font: 800 20px/1.2 var(--titulos); margin-bottom: 4px; }
+  .ok-envio p { color: var(--texto-sec); font-size: 16px; }
+
+  /* Menú principal */
+  .estado { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .puntaje {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--superficie); border-radius: 999px;
+    padding: 6px 18px 6px 6px; min-height: 52px;
+    box-shadow: 0 4px 0 rgba(37, 99, 235, .12);
+  }
+  .puntaje .estrella {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--acento); color: var(--texto);
+    display: grid; place-items: center;
+  }
+  .puntaje .estrella svg { width: 24px; height: 24px; }
+  .puntaje small { display: block; font: 700 12px/1 var(--cuerpo); color: var(--texto-sec); margin-bottom: 2px; }
+  .puntaje b { display: block; font: 800 22px/1 var(--titulos); }
+  .salir {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--superficie); border: 2.5px solid var(--padres-claro);
+    color: var(--padres); cursor: pointer;
+    display: grid; place-items: center;
+  }
+  .salir:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+  .salir svg { width: 24px; height: 24px; }
+
+  .opciones { display: grid; gap: 16px; margin-top: 4px; }
+  .opcion {
+    --sombra: #16A34A;
+    display: flex; align-items: center; gap: 16px;
+    min-height: 104px; padding: 14px 16px;
+    border-radius: 24px; text-decoration: none;
+    color: var(--texto);
+    box-shadow: 0 6px 0 var(--sombra);
+    transition: transform .08s, box-shadow .08s;
+  }
+  .opcion:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--sombra); }
+  .opcion:focus-visible { outline: 3px solid var(--texto); outline-offset: 4px; }
+  .opcion.verde   { background: var(--verde);   --sombra: #16A34A; }
+  .opcion.naranja { background: var(--naranja); --sombra: #EA7C1E; }
+  .opcion.amarillo { background: var(--acento); --sombra: #CA9A04; }
+  .opcion.morado  { background: var(--morado);  --sombra: #5B21B6; color: #fff; }
+  .opcion .icono {
+    flex: none; width: 72px; height: 72px; border-radius: 20px;
+    background: #fff; color: var(--texto);
+    display: grid; place-items: center;
+  }
+  .opcion .texto b { display: block; font: 800 24px/1.1 var(--titulos); }
+  .opcion .texto small { display: block; font-size: 15px; margin-top: 4px; opacity: .85; }
+  .opcion .flecha { margin-left: auto; flex: none; width: 28px; height: 28px; }
+
+  /* Iconos de las opciones */
+  .mini { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; font: 800 20px/1 var(--titulos); }
+  .mini i { font-style: normal; color: #15803D; }
+  .signos { font: 800 30px/1 var(--titulos); white-space: nowrap; color: #C2410C; }
+  .trazo { font: 800 44px/1 var(--titulos); color: #94A3B8; -webkit-text-stroke: 2px #475569; paint-order: stroke; }
+  .carta {
+    width: 38px; height: 50px; border-radius: 10px; background: var(--morado); color: #fff;
+    display: grid; place-items: center; font: 800 28px/1 var(--titulos);
+    transform: rotate(-8deg); box-shadow: 4px 3px 0 #C4B5FD;
+  }
+
+  @media (prefers-reduced-motion: reduce) { .btn, .opcion { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="barra">
+    <span class="logo" aria-hidden="true"><i>1</i><i>+</i><i>=</i></span>
+    <b>MatPlay</b>
+  </header>
+
+  <main>
+    <!-- MENÚ PRINCIPAL -->
+    <section class="pantalla activa" id="menu" aria-labelledby="t-menu">
+      <div class="estado">
+        <div class="puntaje" role="status">
+          <span class="estrella" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg>
+          </span>
+          <span><small>Puntaje</small><b id="puntos">0</b></span>
+        </div>
+        <button class="salir" type="button" data-ir="login" aria-label="Salir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        </button>
+      </div>
+
+      <h1 id="t-menu">¡Bienvenido, <span id="nombre">Mateo</span>!</h1>
+      <p class="sub">¿Qué quieres hacer hoy?</p>
+
+      <nav class="opciones" aria-label="Actividades">
+        <a class="opcion verde" href="#" data-ruta="numeros">
+          <span class="icono" aria-hidden="true"><span class="mini"><i>1</i><i>2</i><i>3</i><i>4</i></span></span>
+          <span class="texto"><b>Aprender números</b><small>Cuenta y dibuja</small></span>
+          <svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a class="opcion amarillo" href="#" data-ruta="trazo">
+          <span class="icono" aria-hidden="true"><span class="trazo">3</span></span>
+          <span class="texto"><b>Trazo</b><small>Dibuja los números</small></span>
+          <svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a class="opcion naranja" href="#" data-ruta="suma">
+          <span class="icono" aria-hidden="true"><span class="signos">+ −</span></span>
+          <span class="texto"><b>Suma y resta</b><small>Resuelve con frutas</small></span>
+          <svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+        <a class="opcion morado" href="#" data-ruta="memorama">
+          <span class="icono" aria-hidden="true"><span class="carta">?</span></span>
+          <span class="texto"><b>Memorama</b><small>Encuentra las parejas</small></span>
+          <svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </nav>
+    </section>
+
+    <!-- RECUPERAR CONTRASEÑA -->
+    <section class="pantalla" id="recuperar" aria-labelledby="t-recuperar">
+      <h1 id="t-recuperar">Recuperar contraseña</h1>
+      <p class="sub">Te enviaremos un mensaje al correo del tutor.</p>
+
+      <form class="tarjeta padres" id="form-recuperar">
+        <div class="campo">
+          <label for="c-correo">Correo del tutor</label>
+          <input id="c-correo" type="email" autocomplete="email" placeholder="correo@ejemplo.com" required>
+        </div>
+        <div class="acciones"><button class="btn btn-primario" type="submit">Enviar</button></div>
+      </form>
+
+      <div class="tarjeta padres" id="envio-ok" role="status" hidden>
+        <div class="ok-envio">
+          <span class="check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          </span>
+          <div>
+            <h2>¡Listo!</h2>
+            <p>Revisa el correo del tutor. Ahí encontrarás los pasos para crear una contraseña nueva.</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-suave" type="button" data-ir="login">← Volver</button>
+    </section>
+  </main>
+</div>
+
+<script>
+  // Rutas de cada pantalla. Cuando se junten los archivos del equipo, solo cambien estos nombres.
+  const RUTAS = {
+    login: 'index.html',
+    numeros: 'Aprender_n_meros_y_Trazo.html',
+    trazo: 'Aprender_n_meros_y_Trazo.html#trazo',
+    suma: 'MatPlay_Suma_Resta_Memorama_MEJORADO.html',
+    memorama: 'MatPlay_Suma_Resta_Memorama_MEJORADO.html#memorama'
+  };
+
+  const pantallas = document.querySelectorAll('.pantalla');
+  function ir(id) {
+    // Si la pantalla no está en este archivo, se abre el archivo correspondiente
+    if (!document.getElementById(id)) { location.href = RUTAS[id] || RUTAS.login; return; }
+    pantallas.forEach(p => p.classList.toggle('activa', p.id === id));
+    window.scrollTo(0, 0);
+    const h1 = document.querySelector('#' + id + ' h1');
+    h1.setAttribute('tabindex', '-1');
+    h1.focus({ preventScroll: true });
+  }
+  document.querySelectorAll('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
+  document.querySelectorAll('[data-ruta]').forEach(a => { a.href = RUTAS[a.dataset.ruta]; });
+
+  // Recuperar: solo muestra el aviso (el envío real va después)
+  document.getElementById('form-recuperar').addEventListener('submit', e => {
+    e.preventDefault();
+    e.target.hidden = true;
+    document.getElementById('envio-ok').hidden = false;
+  });
+
+  // Para ver cada pantalla por separado: archivo.html#recuperar o archivo.html#menu
+  const inicial = location.hash.slice(1);
+  if (inicial && document.getElementById(inicial)) ir(inicial);
+</script>
+</body>
+</html>

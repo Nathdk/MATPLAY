@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aprender números y Trazo</title>
+<style>
+:root{--azul:#2563EB;--amarillo:#FACC15;--verde:#22C55E;--ok:#16A34A;--retry:#F97316;--bg:#F4F8FF;--card:#FFFFFF;--txt:#1F2937;--txt2:#64748B;--line:#CBD5E1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F172A;--card:#1E293B;--txt:#F1F5F9;--txt2:#94A3B8;--line:#475569}}
+:root[data-theme="dark"]{--bg:#0F172A;--card:#1E293B;--txt:#F1F5F9;--txt2:#94A3B8;--line:#475569}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"Trebuchet MS","Comic Sans MS",Verdana,sans-serif}
+header{background:var(--azul);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:1.3rem;font-weight:700}
+header a.volver{margin-left:auto;color:#fff;text-decoration:none;font-size:1rem;font-weight:700;border:2px solid #fff;border-radius:12px;padding:6px 12px;min-height:44px;display:inline-flex;align-items:center}
+header span.logo{background:var(--amarillo);color:var(--txt);border-radius:50%;width:36px;height:36px;display:grid;place-items:center}
+nav{display:flex;gap:8px;padding:12px;max-width:760px;margin:0 auto}
+nav button{flex:1;font:inherit;font-weight:700;font-size:1.05rem;padding:12px;border:3px solid var(--verde);background:var(--card);color:var(--txt);border-radius:16px;cursor:pointer}
+nav button.on{background:var(--verde);color:#fff}
+main{max-width:760px;margin:0 auto;padding:0 12px 24px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border-radius:20px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+h2{margin:0 0 8px;font-size:1.1rem}
+.sel{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sel button{font:inherit;font-size:1.5rem;font-weight:700;aspect-ratio:1;border:3px solid var(--verde);border-radius:14px;background:var(--card);color:var(--txt);cursor:pointer}
+.sel button.on{background:var(--verde);color:#fff}
+.big{display:flex;align-items:center;justify-content:center;gap:20px}
+.big .n{font-size:7rem;font-weight:800;color:var(--verde);line-height:1}
+.big .w{font-size:1.8rem;font-weight:700}
+.frame{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;max-width:360px;margin:8px auto}
+.frame button{aspect-ratio:1.2;border:3px solid var(--txt);background:var(--card);border-radius:8px;cursor:pointer}
+.frame button.f{background:var(--verde)}
+.hint{color:var(--txt2);font-size:.95rem;text-align:center;margin:4px 0}
+.msg{min-height:1.6em;text-align:center;font-weight:700;font-size:1.15rem}
+.msg.ok{color:var(--ok)}.msg.no{color:var(--retry)}
+.objs{font-size:2.2rem;text-align:center;line-height:1.4;letter-spacing:4px;margin:6px 0}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.opts button{font:inherit;font-size:1.8rem;font-weight:700;padding:10px 0;border-radius:50%;aspect-ratio:1;border:3px solid var(--txt);background:var(--card);color:var(--txt);cursor:pointer}
+.opts button.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.opts button.no{border-color:var(--retry);color:var(--retry)}
+.btn{font:inherit;font-weight:700;padding:10px 18px;border:0;border-radius:14px;background:var(--azul);color:#fff;font-size:1rem;cursor:pointer}
+.row{display:flex;gap:8px;justify-content:center;margin-top:8px}
+canvas{display:block;width:100%;max-width:420px;aspect-ratio:1;margin:0 auto;background:var(--card);border:3px solid var(--verde);border-radius:20px;touch-action:none}
+</style>
+</head>
+<body>
+<header><span class="logo">★</span>Mis números<a class="volver" href="Menu.html#menu">← Menú</a></header>
+<nav>
+<button id="t1" class="on">Aprender número</button>
+<button id="t2">Trazo</button>
+</nav>
+<main>
+<section id="s1" class="on">
+<div class="card"><h2>Elige un número</h2><div class="sel" id="sel1"></div></div>
+<div class="card">
+<div class="big"><div class="n" id="num">1</div><div class="w" id="word">uno</div></div>
+<p class="hint">Colorea la cantidad indicada</p>
+<div class="frame" id="frame"></div>
+<div class="msg" id="m1"></div>
+</div>
+<div class="card">
+<h2>¿Cuántos hay?</h2>
+<div class="objs" id="objs"></div>
+<div class="opts" id="opts"></div>
+<div class="msg" id="m2"></div>
+<div class="row"><button class="btn" id="nuevo">Otro ejercicio</button></div>
+</div>
+</section>
+<section id="s2">
+<div class="card"><h2>Elige un número</h2><div class="sel" id="sel2"></div></div>
+<div class="card">
+<p class="hint">Remarca el número con tu dedo. Empieza en el punto verde.</p>
+<canvas id="cv" width="420" height="420"></canvas>
+<div class="row"><button class="btn" id="borrar">Borrar</button></div>
+</div>
+</section>
+</main>
+<script>
+const W=["cero","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez"];
+const E=["🐻","🍐","🌸","🐤","🦁","🐘","🍍","🍎"];
+let n=1;
+const $=id=>document.getElementById(id);
+function mkSel(id){const d=$(id);for(let i=1;i<=10;i++){const b=document.createElement("button");b.textContent=i;b.onclick=()=>setN(i);d.appendChild(b)}}
+mkSel("sel1");mkSel("sel2");
+function setN(i){n=i;
+document.querySelectorAll(".sel button").forEach((b,k)=>b.classList.toggle("on",(k%10)+1===n));
+$("num").textContent=n;$("word").textContent=W[n];
+const f=$("frame");f.innerHTML="";$("m1").textContent="";$("m1").className="msg";
+for(let k=0;k<10;k++){const b=document.createElement("button");b.onclick=()=>{b.classList.toggle("f");chk()};f.appendChild(b)}
+strokes=[];drawT();}
+function chk(){const c=document.querySelectorAll("#frame .f").length,m=$("m1");
+if(c===n){m.textContent="✓ ¡Muy bien!";m.className="msg ok"}
+else{m.textContent=c?"Inténtalo de nuevo: pinta "+n:"";m.className="msg no"}}
+function quiz(){
+const q=1+Math.floor(Math.random()*10),e=E[Math.floor(Math.random()*E.length)];
+$("objs").textContent=Array(q).fill(e).join(" ");$("m2").textContent="";$("m2").className="msg";
+const s=new Set([q]);while(s.size<4)s.add(1+Math.floor(Math.random()*10));
+const o=[...s].sort(()=>Math.random()-.5),box=$("opts");box.innerHTML="";
+o.forEach(v=>{const b=document.createElement("button");b.textContent=v;b.onclick=()=>{
+const m=$("m2");
+if(v===q){b.classList.add("ok");b.textContent="✓";m.textContent="✓ ¡Correcto! Hay "+q;m.className="msg ok"}
+else{b.classList.add("no");m.textContent="Inténtalo de nuevo";m.className="msg no"}};box.appendChild(b)})}
+$("nuevo").onclick=quiz;
+const cv=$("cv"),cx=cv.getContext("2d");let strokes=[],cur=null;
+function drawT(){
+const g=getComputedStyle(document.documentElement);
+cx.clearRect(0,0,420,420);
+cx.font="bold 330px 'Trebuchet MS',Verdana,sans-serif";cx.textAlign="center";cx.textBaseline="alphabetic";
+const t=String(n);
+cx.fillStyle="rgba(34,197,94,.15)";cx.fillText(t,210,330);
+cx.setLineDash([12,10]);cx.lineWidth=4;cx.strokeStyle="#64748B";cx.strokeText(t,210,330);cx.setLineDash([]);
+cx.fillStyle="#22C55E";cx.beginPath();cx.arc(210,90,12,0,7);cx.fill();
+cx.lineCap="round";cx.lineJoin="round";cx.lineWidth=16;cx.strokeStyle="#2563EB";
+strokes.forEach(s=>{cx.beginPath();s.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));if(s.length===1)cx.lineTo(s[0][0]+.1,s[0][1]);cx.stroke()})}
+function pt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*420/r.width,(e.clientY-r.top)*420/r.height]}
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);cur=[pt(e)];strokes.push(cur);drawT()};
+cv.onpointermove=e=>{if(cur){cur.push(pt(e));drawT()}};
+cv.onpointerup=cv.onpointercancel=()=>{cur=null};
+$("borrar").onclick=()=>{strokes=[];drawT()};
+const tabs=[["t1","s1"],["t2","s2"]];
+tabs.forEach(([t,s])=>$(t).onclick=()=>{tabs.forEach(([a,b])=>{$(a).classList.toggle("on",a===t);$(b).classList.toggle("on",b===s)});if(s==="s2"){strokes=[];drawT()}});
+setN(1);quiz();
+if(location.hash==="#trazo")$("t2").click();
+</script>
+</body>
+</html>
